@@ -32,19 +32,21 @@ public class Grid {
          */
         public Cell(int value, int row, int column) {
             this.value = value;
-            if (value != 0) this.confirmed = true;
+            this.confirmed = value != -1;
             this.row = row;
             this.column = column;
             this.block = row / BASE_INDEX * BASE_INDEX + column / BASE_INDEX;
         }
-        
+
     }
 
     /** Cells in a Sudoku grid. */
-    public Cell[][] cells = new Cell[9][9];
+    // This configuration is for 16x16 Sudoku specifically.
+    public Cell[][] cells = new Cell[16][16];
 
     /** Base index of the game. */
-    public final int BASE_INDEX = 3;
+    // This configuration is for 16x16 Sudoku specifically.
+    public final int BASE_INDEX = 4;
 
     /** Dimension of the game. */
     public final int DIMENSION = BASE_INDEX * BASE_INDEX;
@@ -66,7 +68,12 @@ public class Grid {
         for (int i = 0; i < this.DIMENSION; i++) {
             System.out.print("[");
             for (int j = 0; j < this.DIMENSION; j++) {
-                System.out.print(cells[i][j].value + ", ");
+                if (cells[i][j].value == -1) {
+                    System.out.print(".");
+                } else {
+                    System.out.print(Integer.toHexString(cells[i][j].value).toUpperCase());
+                }
+                System.out.print(", ");
             }
             System.out.println("\b\b]");
         }
@@ -79,7 +86,7 @@ public class Grid {
     public boolean isSolved() {
         for (int i = 0; i < this.DIMENSION; i++) {
             for (int j = 0; j < this.DIMENSION; j++) {
-                if (this.cells[i][j].value == 0) {
+                if (this.cells[i][j].value == -1) {
                     return false;
                 }
             }

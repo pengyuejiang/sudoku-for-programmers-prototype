@@ -9,40 +9,54 @@ public class Solver {
      * Import a Sudoku puzzle from file.
      * @param fileName the file that contains the puzzle
      * @return a Sudoku grid
-     * @throws FileNotFoundException throws this exception if the file is not found
+     * @throws FileNotFoundException throws this exception if the puzzle file does not exist
      */
     public static Grid importPuzzleFromFile(String fileName) throws FileNotFoundException {
-        // Change for base 16
-        int[][] array = new int[9][9];
+        // Specifically set for 16x16 Sudoku
+        int[][] array = new int[16][16];
         Scanner input = new Scanner(new File(fileName));
+        // Read line by line
         for (int i = 0; input.hasNext(); i++) {
-            String[] temp = input.nextLine().split(",");
-            // Change for base 16
-            int[] data = new int[9];
-            for (int j = 0; j < temp.length; j++) {
-                // Change for base 16
-                data[j] = Integer.parseInt(temp[j].trim());
+            // Split a line to convert to an array
+            String[] raw = input.nextLine().split(",");
+            // Specifically set for 16x16 Sudoku
+            int[] processed = new int[16];
+            for (int j = 0; j < raw.length; j++) {
+                // "." can be other things as well, such as "*" or even "$"
+                if (raw[j].trim().equals(".")) {
+                    processed[j] = -1;
+                } else {
+                    processed[j] = Integer.parseInt(raw[j].trim(), 16);
+                }
+                
             }
-            array[i] = data;
+            array[i] = processed;
         }
         input.close();
         return new Grid(array);
     }
 
-    /** Update the possibilities remaining for each cell. */
+    /**
+     * Update the possibilities remaining for each cell.
+     * @param grid the puzzle grid to update for
+     */
     public static void updatePossibilities(Grid grid) {
+        // A conventional loop to go through cells
         for (int i = 0; i < grid.DIMENSION; i++) {
-            for (int j= 0; j < grid.DIMENSION; j++) {
+            for (int j = 0; j < grid.DIMENSION; j++) {
                 Grid.Cell current = grid.cells[i][j];
-                // If the cell is already filled, no more possibilities
+                // If the cell is already confirmed, no more possibilities
                 if (current.confirmed) {
                     continue;
                 }
-                // Initialize possibilities
+                // Initialize possibilities as an array list
                 current.possibilities = new ArrayList<>();
-                // Change for base 16
-                for (int k = 1; k <= grid.DIMENSION; k++) {
-                    if (possibleToAdd(grid, current, k)) current.possibilities.add(k);
+                // Going through the possibilities to see if they are possible at all
+                // IMPORTANT! Traditional 9x9 Sudoku starts from 1, but ours starts from 0
+                for (int possibility = 0; possibility < grid.DIMENSION; possibility++) {
+                    if (possibleToAdd(grid, current, possibility)) {
+                        current.possibilities.add(possibility);
+                    }
                 }
             }
         }
@@ -53,29 +67,32 @@ public class Solver {
      * it is possible to consider a number as possibility.
      * @param grid the grid to add
      * @param cell the cell to add possibilities
-     * @param number the potential number to add
-     * @return whether it is possible to add the number to the cell
+     * @param possibility the potential number to add
+     * @return whether it is possible to add a possibility to the cell
      */
-    private static boolean possibleToAdd(Grid grid, Grid.Cell cell, int number) {
-        if (violatesRowRule(grid, cell, number)
-                || violatesColumnRule(grid, cell, number)
-                || violatesBlockRule(grid, cell, number)) {
+    private static boolean possibleToAdd(Grid grid, Grid.Cell cell, int possibility) {
+        // If a possibility violates any one of the three checks
+        if (violatesRowRule(grid, cell, possibility)
+                || violatesColumnRule(grid, cell, possibility)
+                || violatesBlockRule(grid, cell, possibility)) {
+            // They are no longer eligible
             return false;
         }
+        // If passed all three test, congratulations!
         return true;
     }
 
     /**
-     * Check against row repetition rule.
+     * Auxiliary method that check against row repetition rule.
      * @param grid the grid to check
      * @param cell the cell to check
-     * @param number the number to check
+     * @param possibility the number to check
      * @return whether this number violates the row repetition rule
      */
-    private static boolean violatesRowRule(Grid grid, Grid.Cell cell, int number) {
+    private static boolean violatesRowRule(Grid grid, Grid.Cell cell, int possibility) {
         // Check for repetition in the same row
         for (int i = 0; i < grid.DIMENSION; i++) {
-            if (number == grid.cells[cell.row][i].value) {
+            if (possibility == grid.cells[cell.row][i].value) {
                 return true;
             }
         }
@@ -84,16 +101,16 @@ public class Solver {
     }
 
     /**
-     * Check against column repetition rule.
+     * Auxiliary method that check against column repetition rule.
      * @param grid the grid to check
      * @param cell the cell to check
-     * @param number the number to check
+     * @param possibility the number to check
      * @return whether this number violates the column repetition rule
      */
-    private static boolean violatesColumnRule(Grid grid, Grid.Cell cell, int number) {
+    private static boolean violatesColumnRule(Grid grid, Grid.Cell cell, int possibility) {
         // Check for repetition in the same column
         for (int i = 0; i < grid.DIMENSION; i++) {
-            if (number == grid.cells[i][cell.column].value) {
+            if (possibility == grid.cells[i][cell.column].value) {
                 return true;
             }
         }
@@ -102,20 +119,22 @@ public class Solver {
     }
 
     /**
-     * Check against block repetition rule.
+     * Auxiliary method that check against block repetition rule.
      * @param grid the grid to check
      * @param cell the cell to check
-     * @param number the number to check
+     * @param possibility the number to check
      * @return whether this number violates the block repetition rule
      */
-    private static boolean violatesBlockRule(Grid grid, Grid.Cell cell, int number) {
+    private static boolean violatesBlockRule(Grid grid, Grid.Cell cell, int possibility) {
         // Check for repetition in the same block
         // Iterate through the rows in the block
-        for (int i = cell.block / grid.BASE_INDEX * grid.BASE_INDEX; i < cell.block / grid.BASE_INDEX * grid.BASE_INDEX + grid.BASE_INDEX; i++) {
+        for (int i = cell.block / grid.BASE_INDEX * grid.BASE_INDEX;
+                i < cell.block / grid.BASE_INDEX * grid.BASE_INDEX + grid.BASE_INDEX; i++) {
             // Iterate through the columns in the block
-            for (int j = cell.block % grid.BASE_INDEX * grid.BASE_INDEX; j < cell.block % grid.BASE_INDEX * grid.BASE_INDEX + grid.BASE_INDEX; j++) {
+            for (int j = cell.block % grid.BASE_INDEX * grid.BASE_INDEX;
+                    j < cell.block % grid.BASE_INDEX * grid.BASE_INDEX + grid.BASE_INDEX; j++) {
                 // If repetition is found
-                if (number == grid.cells[i][j].value) {
+                if (possibility == grid.cells[i][j].value) {
                     return true;
                 }
             }
@@ -127,7 +146,7 @@ public class Solver {
      * Put a given number into place.
      * @param grid the grid to solve
      */
-    public static void confirmNumbers(Grid grid) {
+    public static void step(Grid grid) {
         // For each cell
         for (int i = 0; i < grid.DIMENSION; i++) {
             for (int j = 0; j < grid.DIMENSION; j++) {
@@ -143,8 +162,13 @@ public class Solver {
                     cell.value = cell.possibilities.get(0);
                     cell.confirmed = true;
                     cell.possibilities = null;
+
                     // @DEBUG
-                    System.out.printf("Naked single of %d at %d, %d, block %d\n", cell.value, cell.row, cell.column, cell.block);
+                    System.out.printf("Naked single of %s at R%sC%sB%s (from 0)\n",
+                            Integer.toHexString(cell.value),
+                            Integer.toHexString(cell.row),
+                            Integer.toHexString(cell.column),
+                            Integer.toHexString(cell.block));
                     // @DEBUG END
 
                     // CRITICAL! Every time you update a cell, remove possibilities in cells
@@ -154,7 +178,9 @@ public class Solver {
                     removePossibilityInColumn(grid, cell.column, cell.value);
                     removePossibilityInBlock(grid, cell.block, cell.value);
                 } else if (cell.possibilities.size() == 0) {
-                    System.out.println(i + ", " + j + "has no solution.");
+                    System.out.printf("Cell (%s, %s) has no solution.\n",
+                            Integer.toHexString(i),
+                            Integer.toHexString(j));
                     // If nothing is possible, the puzzle is wrong itself
                     System.out.println("Your puzzle is wrong.");
                     grid.printGrid();
@@ -168,16 +194,16 @@ public class Solver {
                                 || Solver.hiddenSingleInColumn(grid, cell, possibility)
                                 || Solver.hiddenSingleInBlock(grid, cell, possibility))
                                 && possibleToAdd(grid, cell, possibility)) {
-                            // @DEBUG
-                            System.out.println();
-                            System.out.printf("Hidden single of %d in %d, %d\n", possibility, cell.row, cell.column);
-                            System.out.println("Hidden in row: " + Solver.hiddenSingleInRow(grid, cell, possibility));
-                            System.out.println("Hidden in column: " + Solver.hiddenSingleInColumn(grid, cell, possibility));
-                            System.out.println("Hidden in block: " + Solver.hiddenSingleInBlock(grid, cell, possibility));
-                            // @DEBUG END
                             cell.value = possibility;
                             cell.confirmed = true;
                             cell.possibilities = null;
+                            // @DEBUG
+                            System.out.printf("Hidden single of %s at R%sC%sB%s (from 0)\n",
+                                    Integer.toHexString(cell.value),
+                                    Integer.toHexString(cell.row),
+                                    Integer.toHexString(cell.column),
+                                    Integer.toHexString(cell.block));
+                            // @DEBUG END
                             // CRITICAL! Every time you update a cell, remove possibilities in
                             // cells in the same row, column, and block! If not this will cause
                             // problems!
@@ -192,22 +218,35 @@ public class Solver {
         }
     }
 
+    /**
+     * Remove a given possibility in a specified row.
+     * @param grid the puzzle grid
+     * @param row the row to remove possibility for
+     * @param value the possibility to remove
+     */
     private static void removePossibilityInRow(Grid grid, int row, int value) {
         for (int i = 0; i < grid.DIMENSION; i++) {
             ArrayList<Integer> possibilities = grid.cells[row][i].possibilities;
+            // Remove the possibility only if the cell is unconfirmed and has the value
             if (possibilities != null && possibilities.indexOf(value) != -1) {
                 // This is to prevent the list from moving with index
                 possibilities.remove(possibilities.indexOf(value));
                 // @DEBUG
-                System.out.printf("Removing Row Possibility of %d in cell %d, %d\n", value, row, i);
-                System.out.println("Original: " + grid.cells[row][i].possibilities);
-                System.out.println("Removed " + value + ", now " + possibilities);
-                System.out.println();
+                System.out.printf("Removing Row Possibility of %s in cell (%s, %s)\n",
+                        Integer.toHexString(value),
+                        Integer.toHexString(row),
+                        Integer.toHexString(i));
                 // @DEBUG END
             }
         }
     }
 
+    /**
+     * Remove a given possibility in a specified column.
+     * @param grid the puzzle grid
+     * @param column the column to remove possibility for
+     * @param value the possibility to remove
+     */
     private static void removePossibilityInColumn(Grid grid, int column, int value) {
         for (int i = 0; i < grid.DIMENSION; i++) {
             ArrayList<Integer> possibilities = grid.cells[i][column].possibilities;
@@ -215,15 +254,21 @@ public class Solver {
                 // This is to prevent the list from moving with index
                 possibilities.remove(possibilities.indexOf(value));
                 // @DEBUG
-                System.out.printf("Removing Column Possibility of %d in cell %d, %d\n", value, i, column);
-                System.out.println("Original: " + grid.cells[i][column].possibilities);
-                System.out.println("Removed " + value + ", now " + possibilities);
-                System.out.println();
+                System.out.printf("Removing Column Possibility of %s in cell (%s, %s)\n",
+                        Integer.toHexString(value),
+                        Integer.toHexString(i),
+                        Integer.toHexString(column));
                 // @DEBUG END
             }
         }
     }
 
+    /**
+     * Remove a given possibility in a specified block.
+     * @param grid the puzzle grid
+     * @param block the block to remove possibility for
+     * @param value the possibility to remove
+     */
     private static void removePossibilityInBlock(Grid grid, int block, int value) {
         for (int i = block / grid.BASE_INDEX * grid.BASE_INDEX;
                 i < block / grid.BASE_INDEX * grid.BASE_INDEX + grid.BASE_INDEX; i++) {
@@ -234,16 +279,23 @@ public class Solver {
                     // This is to prevent the list from moving with index
                     possibilities.remove(possibilities.indexOf(value));
                     // @DEBUG
-                    System.out.printf("Removing Block Possibility of %d in cell %d, %d\n", value, i, j);
-                    System.out.println("Original: " + grid.cells[i][j].possibilities);
-                    System.out.println("Removed " + value + ", now " + possibilities);
-                    System.out.println();
+                    System.out.printf("Removing Block Possibility of %s in cell (%s, %s)\n",
+                            Integer.toHexString(value),
+                            Integer.toHexString(i),
+                            Integer.toHexString(j));
                     // @DEBUG END
                 }
             }
         }
     }
 
+    /**
+     * An auxiliary method to see if a possibility is a hidden single.
+     * @param grid the puzzle grid
+     * @param cell the cell that contains the possibility
+     * @param possibility a potential number
+     * @return
+     */
     public static boolean hiddenSingleInRow(Grid grid, Grid.Cell cell, int possibility) {
         int count = 0;
         for (int i = 0; i < grid.DIMENSION; i++) {
@@ -257,6 +309,13 @@ public class Solver {
         return count == 1;
     }
     
+    /**
+     * An auxiliary method to see if a possibility is a hidden single.
+     * @param grid the puzzle grid
+     * @param cell the cell that contains the possibility
+     * @param possibility a potential number
+     * @return
+     */
     public static boolean hiddenSingleInColumn(Grid grid, Grid.Cell cell, int possibility) {
         int count = 0;
         for (int i = 0; i < grid.DIMENSION; i++) {
@@ -270,6 +329,13 @@ public class Solver {
         return count == 1;
     }
 
+    /**
+     * An auxiliary method to see if a possibility is a hidden single.
+     * @param grid the puzzle grid
+     * @param cell the cell that contains the possibility
+     * @param possibility a potential number
+     * @return
+     */
     public static boolean hiddenSingleInBlock(Grid grid, Grid.Cell cell, int possibility) {
         int count = 0;
         // Iterate through the rows in the block
@@ -298,14 +364,14 @@ public class Solver {
             // Initialize it at the beginning
             Solver.updatePossibilities(grid);
             // Solve it for one step
-            Solver.confirmNumbers(grid);
-            System.out.println();
+            Solver.step(grid);
             // Print it again
             grid.printGrid();
         }
     }
 
     public static void main(String[] args) {
+        long start = System.currentTimeMillis();
         try {
             Grid grid;
             grid = importPuzzleFromFile("sudoku.txt");
@@ -314,6 +380,8 @@ public class Solver {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+        long end = System.currentTimeMillis();
+        System.out.println("Run Time: " + (end - start) + "ms");
     } 
 
 }
