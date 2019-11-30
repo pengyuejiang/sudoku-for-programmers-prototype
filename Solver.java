@@ -3,6 +3,8 @@ import java.util.ArrayList;
 import java.io.File;
 import java.io.FileNotFoundException;
 
+// A solver for Sudoku puzzle, the main bulk of the code is here.
+// Compile it and run it with javac and java.
 public class Solver {
 
     /**
@@ -28,7 +30,7 @@ public class Solver {
                 } else {
                     processed[j] = Integer.parseInt(raw[j].trim(), 16);
                 }
-                
+
             }
             array[i] = processed;
         }
@@ -308,7 +310,7 @@ public class Solver {
         // If it is the only possibility in row, return true
         return count == 1;
     }
-    
+
     /**
      * An auxiliary method to see if a possibility is a hidden single.
      * @param grid the puzzle grid
@@ -382,6 +384,6 @@ public class Solver {
         }
         long end = System.currentTimeMillis();
         System.out.println("Run Time: " + (end - start) + "ms");
-    } 
+    }
 
 }

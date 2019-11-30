@@ -14,6 +14,13 @@ This is an automated Sudoku puzzle solver for 16x16 Sudoku puzzles from 0 to F. 
 
 1. The puzzle is stored in the file `sudoku.txt`, where `.` is used to represent an empty cell. This is not mandatory, feel free to change it into any other symbols other than candidate numbers.
 
+## How to run
+
+1. Change into the project directory.
+2. Replace the puzzle in `sudoku.txt` with your puzzle.
+3. Enter `javac Solver.java` to compile solver.
+4. Enter `java Solver` to solve the puzzle.
+
 ## Appendix - Sample Console Output
 
 ```

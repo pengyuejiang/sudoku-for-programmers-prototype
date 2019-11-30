@@ -2,13 +2,13 @@ import java.util.ArrayList;
 
 /** A class to represent the Sudoku grid. */
 public class Grid {
-    
+
     /** A class to encapsulate one Sudoku cell. */
     public class Cell {
 
         /** Number value of the cell. */
         public int value;
-        
+
         /** Whether the cell has been confirmed. Cells came with the problem are confirmed. */
         public boolean confirmed;
 
